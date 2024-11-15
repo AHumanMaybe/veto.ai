@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, Response
 from flask_cors import CORS
-from datetime import datetime  # Import datetime module
+from datetime import datetime
 
 from scapy.all import sniff, get_if_addr
 from sklearn.ensemble import IsolationForest
@@ -187,6 +187,7 @@ def capture_and_detect(model, interface="Wi-Fi", batch_size=20, interval=5):
 def init_model():
     # Train the model once when the application starts
     train_model()
+
 
 with app.app_context():
     init_model()
