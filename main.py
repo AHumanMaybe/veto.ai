@@ -55,7 +55,7 @@ def commit_action(remediation, timestamp):
 def get_remediation_action(summary, ruleset):
     url = "https://hackathon.niprgpt.mil/llama/v1/chat/completions"
     headers = {
-        "Authorization": "Bearer Y2VudGNvbTpsZXRtZWlu",
+        "Authorization": "Bearer YOUR-API-KEY-HERE",
         "Content-Type": "application/json"
     }
     prompt = (
@@ -84,7 +84,7 @@ def get_remediation_action(summary, ruleset):
 def respond_compliance(summary):
     url = "https://hackathon.niprgpt.mil/llama/v1/chat/completions"
     headers = {
-        "Authorization": "Bearer Y2VudGNvbTpsZXRtZWlu",
+        "Authorization": "Bearer YOUR-API-KEY-HERE",
         "Content-Type": "application/json"
     }
     prompt = (
