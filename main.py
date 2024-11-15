@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, Response
+from flask import Flask, jsonify, Response, request
 from flask_cors import CORS
 from datetime import datetime
 
@@ -80,7 +80,33 @@ def get_remediation_action(summary, ruleset):
     else:
         print(f"Error: {response.status_code} - {response.text}")
         return "Error retrieving action"
-
+    
+def respond_compliance(summary):
+    url = "https://hackathon.niprgpt.mil/llama/v1/chat/completions"
+    headers = {
+        "Authorization": "Bearer Y2VudGNvbTpsZXRtZWlu",
+        "Content-Type": "application/json"
+    }
+    prompt = (
+        f"Based on the summary of Windows registry key values: {summary}, and the context that: ScanWithAntiVirus should have a value containing 3"
+        f"recommend a specific response to the current summary of key values in a non decorated list for each given key value that contains ONLY the following message:"
+        f"[change/keep] [key value] [to/as] [value to change or keep as]"
+        f"respond with nothing else except your answers for the given context"
+    )
+    
+    data = {
+        "model": "neuralmagic/Meta-Llama-3.1-70B-Instruct-FP8",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.7
+    }
+    
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code == 200:
+        action = response.json().get("choices", [{}])[0].get("message", {}).get("content", "No action recommended.")
+        return action.splitlines()[0].strip()  # Only return the first line of the response
+    else:
+        print(f"Error: {response.status_code} - {response.text}")
+        return "Error retrieving action"
 # SUMMARIZE PHASE
 def summarize_anomalies(anomalies):
     summaries = []
@@ -188,9 +214,38 @@ def init_model():
     # Train the model once when the application starts
     train_model()
 
+# Windows Compliance
+def get_reg_values(key, value):
+    try:
+        # Construct the full command to query the registry
+        cmd = f"reg query \"{key}\" /v {value}"
+        print(cmd)
+        
+        # Run the command
+        completed_process = subprocess.run(f"cmd.exe /c {cmd}", capture_output=True, text=True)
+        
+        # Check if the command was successful
+        if completed_process.returncode == 0:
+            return completed_process.stdout.strip()  # Return the output (registry value)
+        else:
+            return f"Error: {completed_process.stderr.strip()}"  # Return error message if registry key/value not found
+    except Exception as e:
+        return f"An error occurred: {str(e)}"  # Return any exception message
 
 with app.app_context():
     init_model()
+
+@app.route('/check_registry_value', methods=['GET'])
+def get_registry_value():
+    reg_key = request.args.get('key')  # Get the registry key from query parameter
+    reg_value = request.args.get('value')  # Get the registry value name from query parameter
+    
+    if not reg_key or not reg_value:
+        return jsonify({"error": "Please provide both 'key' and 'value' parameters."}), 400
+    
+    summary = get_reg_values(reg_key, reg_value)
+    result = respond_compliance(summary)
+    return jsonify({"registry_key": reg_key, "registry_value": reg_value, "result": result})
 
 @app.route('/start_detection_sse', methods=['GET'])
 def start_detection_sse():

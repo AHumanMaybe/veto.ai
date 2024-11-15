@@ -4,6 +4,8 @@ import './App.css';
 function App() {
   const [anomalies, setAnomalies] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
+  const [iscompliant, setIsCompliant] = useState("")
+
   const intervalRef = useRef(null);  // To store the interval ID
 
   // Function to fetch anomalies from the backend
@@ -27,6 +29,22 @@ function App() {
       console.error("Error fetching anomalies:", error);
     }
   };
+
+  const fetchCompliance = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/check_registry_value?key=HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Attachments&value=ScanWithAntiVirus')
+      const data = await response.json()
+
+      if (data.result) {
+        setIsCompliant(data.result)
+      }
+      else {
+        console.error("Fetched data does not contain a check key:", data)
+      }
+    } catch (error) {
+      console.error("Error fetching compliance", error)
+    }
+  }
 
   // Function to start/stop the repeated fetch call
   const toggleDetection = () => {
@@ -115,6 +133,14 @@ function App() {
           )}
         </ul>
       </div>
+      <button onClick={fetchCompliance} className="mb-4 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
+          Check Compliance
+      </button>
+      <span 
+        className={`flex justify-center ${iscompliant.includes('keep') ? 'text-green-500' : 'text-red-500'}`}
+      >
+        {iscompliant}
+      </span>
     </div>
   );
 }
