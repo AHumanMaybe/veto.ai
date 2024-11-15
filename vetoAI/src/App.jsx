@@ -50,6 +50,28 @@ function App() {
     };
   }, []);
 
+  // Function to export anomalies to a CSV file
+  const exportToCSV = () => {
+    // Convert anomalies data to CSV format
+    const headers = ["Action", "Time"];
+    const rows = anomalies.map(anomaly => [anomaly.action, anomaly.time]);
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += headers.join(",") + "\r\n";  // Add headers to the CSV content
+    rows.forEach(row => {
+      csvContent += row.join(",") + "\r\n";  // Add each row to the CSV content
+    });
+
+    // Create a download link for the CSV file
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "anomalies_log.csv");
+    document.body.appendChild(link);
+    link.click();  // Trigger the download
+    document.body.removeChild(link);  // Remove the link after downloading
+  };
+
   return (
     <div className="flex-col w-full">
       <div className="flex justify-center items-center w-full my-2">
@@ -58,13 +80,24 @@ function App() {
       
       <h1 className="text-5xl font-bold mb-4"><span className='text-red-500'>Veto.AI</span> Anomaly Response Log</h1>
 
-      {/* Button to start/stop anomaly detection */}
-      <button
-        onClick={toggleDetection}
-        className="mb-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-      >
-        {isRunning ? 'Stop Detection' : 'Start Detection'}
-      </button>
+      <div className='space-x-2'>
+          {/* Button to start/stop anomaly detection */}
+        <button
+          onClick={toggleDetection}
+          className="mb-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+        >
+          {isRunning ? 'Stop Detection' : 'Start Detection'}
+        </button>
+
+        {/* Button to export the anomalies to CSV */}
+        <button
+          onClick={exportToCSV}
+          className="mb-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+        >
+          Export to CSV
+        </button>
+      </div>
+      
 
       {/* Scrollable container */}
       <div className="flex w-full h-64 border-2 border-stone-600 rounded overflow-y-scroll p-2 justify-center">
